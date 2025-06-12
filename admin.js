@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         } catch (error) {
             console.error(`Error saving to localStorage for key "${key}":`, error);
-            alert('حدث خطأ أثناء حفظ البيانات! تحقق من وحدة التحكم.');
+            showToast('حدث خطأ أثناء حفظ البيانات! تحقق من وحدة التحكم.', 'error');
             return false;
         }
     }
@@ -42,6 +42,37 @@ function renderWelcomeMessage() {
     } else if (welcomeMessage) {
         welcomeMessage.textContent = 'مرحبًا، ضيف!';
     }
+}
+    function showToast(message, type = 'success') {
+    let backgroundColor;
+    switch (type) {
+        case 'success':
+            backgroundColor = '#28a745'; // أخضر للنجاح
+            break;
+        case 'error':
+            backgroundColor = '#dc3545'; // أحمر للخطأ
+            break;
+        case 'info':
+            backgroundColor = '#17a2b8'; // أزرق للمعلومات
+            break;
+        default:
+            backgroundColor = '#333'; // رمادي افتراضي
+    }
+    Toastify({
+        text: message,
+        duration: 3000, // 3 ثواني
+        gravity: 'top', // أعلى الصفحة
+        position: 'right', // اليمين
+        backgroundColor: backgroundColor,
+        stopOnFocus: true,
+        style: {
+            fontSize: '16px',
+            fontFamily: 'Arial, sans-serif',
+            padding: '15px',
+            borderRadius: '5px',
+            direction: 'rtl', // النص من اليمين لليسار
+        }
+    }).showToast();
 }
 
     // جلب البيانات
@@ -93,11 +124,11 @@ function renderWelcomeMessage() {
         const password = document.getElementById('admin-password').value.trim();
 
         if (!fullName || !username || !password) {
-            alert('يرجى إدخال الاسم الكامل، اسم المستخدم، وكلمة المرور!');
+            showToast('يرجى إدخال الاسم الكامل، اسم المستخدم، وكلمة المرور!', 'error');
             return;
         }
         if (admins.some(admin => admin.username === username) || students.some(s => s.username === username)) {
-            alert('اسم المستخدم موجود بالفعل! اختر اسم مستخدم آخر.');
+            showToast('اسم المستخدم موجود بالفعل! اختر اسم مستخدم آخر.', 'error');
             return;
         }
 
@@ -107,7 +138,7 @@ function renderWelcomeMessage() {
             console.log('New admin password hashed:', hashedPassword.length, 'characters');
         } catch (error) {
             console.error('Error hashing password:', error);
-            alert('خطأ في تشفير كلمة المرور! تأكد من تحميل مكتبة CryptoJS.');
+            showToast('خطأ في تشفير كلمة المرور! تأكد من تحميل مكتبة CryptoJS.', 'error');
             return;
         }
 
@@ -119,7 +150,7 @@ function renderWelcomeMessage() {
         admins.push(newAdmin);
         if (saveToLocalStorage('admins', admins)) {
             renderAdmins();
-            alert(`تم إضافة الأدمن بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${password}\nاحتفظ بهذه البيانات.`);
+            showToast(`تم إضافة الأدمن بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${password}\nاحتفظ بهذه البيانات.`, 'success');
             this.reset();
         }
     });
@@ -127,13 +158,13 @@ function renderWelcomeMessage() {
     window.deleteAdmin = function(username) {
         if (confirm('هل أنت متأكد من حذف هذا الأدمن؟')) {
             if (admins.length === 1) {
-                alert('لا يمكن حذف آخر أدمن! يجب أن يبقى أدمن واحد على الأقل.');
+                showToast('لا يمكن حذف آخر أدمن! يجب أن يبقى أدمن واحد على الأقل.', 'error');
                 return;
             }
             admins = admins.filter(admin => admin.username !== username);
             if (saveToLocalStorage('admins', admins)) {
                 renderAdmins();
-                alert('تم حذف الأدمن بنجاح.');
+                showToast('تم حذف الأدمن بنجاح.', 'success');
             }
         }
     };
@@ -263,14 +294,14 @@ function renderWelcomeMessage() {
     window.addNotification = function() {
         const text = document.getElementById('notification-text')?.value.trim();
         if (!text) {
-            alert('يرجى إدخال نص الإشعار!');
+            showToast('يرجى إدخال نص الإشعار!', 'error');
             return;
         }
         const date = new Date().toLocaleString('ar-EG');
         notifications.push({ text, date });
         if (saveToLocalStorage('notifications', notifications)) {
             renderNotifications();
-            alert('تم إضافة الإشعار بنجاح!');
+            showToast('تم إضافة الإشعار بنجاح!', 'success');
             document.getElementById('notification-text').value = '';
         }
     };
@@ -280,7 +311,7 @@ function renderWelcomeMessage() {
             notifications.splice(index, 1);
             if (saveToLocalStorage('notifications', notifications)) {
                 renderNotifications();
-                alert('تم حذف الإشعار بنجاح.');
+                showToast('تم حذف الإشعار بنجاح.', 'success');
             }
         }
     };
@@ -319,12 +350,12 @@ function renderWelcomeMessage() {
         const parentSummons = document.getElementById('parent-summons').checked;
 
         if (!studentId || !reason || !penalty) {
-            alert('يرجى إدخال جميع الحقول المطلوبة!');
+            showToast('يرجى إدخال جميع الحقول المطلوبة!', 'error');
             return;
         }
 
         if (!students.some(s => s.id === studentId)) {
-            alert('رقم الجلوس غير موجود! يرجى التأكد من رقم الجلوس.');
+            showToast('رقم الجلوس غير موجود! يرجى التأكد من رقم الجلوس.', 'error');
             return;
         }
 
@@ -333,7 +364,7 @@ function renderWelcomeMessage() {
         violations.push(newViolation);
         if (saveToLocalStorage('violations', violations)) {
             renderViolations();
-            alert(`تم إضافة ${type === 'warning' ? 'إنذار' : 'مخالفة'} بنجاح!`);
+            showToast(`تم إضافة ${type === 'warning' ? 'إنذار' : 'مخالفة'} بنجاح!`, 'success');
             this.reset();
         }
     });
@@ -343,7 +374,7 @@ function renderWelcomeMessage() {
             violations.splice(index, 1);
             if (saveToLocalStorage('violations', violations)) {
                 renderViolations();
-                alert('تم حذف الإنذار/المخالفة بنجاح.');
+                showToast('تم حذف الإنذار/المخالفة بنجاح.', 'success');
             }
         }
     };
@@ -351,7 +382,7 @@ function renderWelcomeMessage() {
     window.processText = function() {
         const textInput = document.getElementById('text-input')?.value.trim();
         if (!textInput) {
-            alert('يرجى إلصق النص أولاً!');
+            showToast('يرجى إلصق النص أولاً!', 'error');
             return;
         }
         const lines = textInput.split('\n').filter(line => line.trim() !== '');
@@ -399,7 +430,7 @@ function renderWelcomeMessage() {
         if (saveToLocalStorage('students', students)) {
             renderResults();
             renderStats();
-            alert(`تم تحليل النص وإضافة ${addedCount} طالب جديد وتحديث ${updatedCount} طالب بنجاح! كلمة المرور للطلاب الجدد هي: [الاسم الأول بالحرف الكبير]1234@`);
+            showToast(`تم تحليل النص وإضافة ${addedCount} طالب جديد وتحديث ${updatedCount} طالب بنجاح! كلمة المرور للطلاب الجدد هي: [الاسم الأول بالحرف الكبير]1234@`, 'success');
             document.getElementById('text-input').value = '';
         }
     };
@@ -419,11 +450,11 @@ function renderWelcomeMessage() {
         const subject8 = parseInt(document.getElementById('subject8').value) || 0;
 
         if (!fullName || !studentId) {
-            alert('يرجى إدخال اسم الطالب ورقم الجلوس!');
+            showToast('يرجى إدخال اسم الطالب ورقم الجلوس!', 'error');
             return;
         }
         if ([subject1, subject2, subject3, subject4, subject5, subject6, subject7, subject8].some(g => g < 0 || g > 100)) {
-            alert('تأكد أن جميع الدرجات بين 0 و100!');
+            showToast('تأكد أن جميع الدرجات بين 0 و100!', 'error');
             return;
         }
 
@@ -445,7 +476,7 @@ function renderWelcomeMessage() {
             if (saveToLocalStorage('students', students)) {
                 renderResults();
                 renderStats();
-                alert(`تم تحديث درجات الطالب ${fullName} بنجاح!`);
+                showToast(`تم تحديث درجات الطالب ${fullName} بنجاح!`, 'success');
                 this.reset();
             }
         } else {
@@ -466,7 +497,7 @@ function renderWelcomeMessage() {
             if (saveToLocalStorage('students', students)) {
                 renderResults();
                 renderStats();
-                alert(`تم إضافة الطالب بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${originalPassword}`);
+                showToast(`تم إضافة الطالب بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${originalPassword}`, 'success');
                 this.reset();
             }
         }
@@ -480,7 +511,7 @@ function renderWelcomeMessage() {
                 renderResults();
                 renderStats();
                 renderViolations();
-                alert('تم حذف الطالب بنجاح.');
+                showToast('تم حذف الطالب بنجاح.', 'success');
             }
         }
     };
