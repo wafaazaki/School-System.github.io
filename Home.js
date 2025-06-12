@@ -169,5 +169,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // استدعاء الدوال
     renderNotifications();
-    renderNotifications();
+    renderWelcomeMessage();
 });
