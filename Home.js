@@ -18,21 +18,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return [];
         }
     }
+    function renderWelcomeMessage() {
+    const welcomeMessage = document.querySelector('.welcome-message');
+    const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (welcomeMessage && loggedInUser) {
+        welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
+    } else if (welcomeMessage) {
+        welcomeMessage.textContent = 'مرحبًا، ضيف!';
+    }
+}
 
     // جلب البيانات
     let students = getFromLocalStorage('students');
     let violations = getFromLocalStorage('violations');
-
-    // دالة لعرض رسالة الترحيب
-    function renderWelcomeMessage() {
-        const welcomeMessage = document.querySelector('.welcome-message');
-        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-        if (welcomeMessage && loggedInUser) {
-            welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
-        } else if (welcomeMessage) {
-            welcomeMessage.textContent = 'مرحبًا، ضيف!';
-        }
-    }
 
     // عرض الإشعارات
     function renderNotifications() {
@@ -51,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // عرض النافذة الجانبية بناءً على نوع المستخدم
+    // عرض النافبار بناءً على نوع المستخدم
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
     const navBar = document.getElementById('nav-bar');
     if (loggedInUser) {
@@ -170,6 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // استدعاء الدوال
-    renderWelcomeMessage(); // استدعاء دالة الترحيب
+    renderNotifications();
     renderNotifications();
 });
