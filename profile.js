@@ -105,8 +105,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // عرض النافبار
 const navBar = document.getElementById('nav-bar');
 const navItems = [
-    { href: 'splash.html', icon: 'fas fa-home', title: 'الرئيسية' },
-    { href: 'index.html', icon: 'fas fa-chart-line', title: 'النتائج' },
+    { href: 'index.html', icon: 'fas fa-home', title: 'الرئيسية' },
+    { href: 'Home.html', icon: 'fas fa-chart-line', title: 'النتائج' },
     { href: 'profile.html', icon: 'fas fa-user', title: 'الملف الشخصي' }
 ];
 if (loggedInUser.type === 'admin') {
