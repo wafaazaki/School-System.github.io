@@ -34,17 +34,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     }
-
-    // دالة لعرض رسالة الترحيب
-    function renderWelcomeMessage() {
-        const welcomeMessage = document.querySelector('.welcome-message');
-        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-        if (welcomeMessage && loggedInUser) {
-            welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
-        } else if (welcomeMessage) {
-            welcomeMessage.textContent = 'مرحبًا، ضيف!';
-        }
+function renderWelcomeMessage() {
+    const welcomeMessage = document.querySelector('.welcome-message');
+    const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (welcomeMessage && loggedInUser) {
+        welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
+    } else if (welcomeMessage) {
+        welcomeMessage.textContent = 'مرحبًا، ضيف!';
     }
+}
 
     // جلب البيانات
     let students = getFromLocalStorage('students');
@@ -199,43 +197,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 return sum + avg;
             }, 0) / students.length : 0;
 
-            const passingStudents = students.filter(s => 
-            {
-                const total = s.subjects.reduce((sum, s) => sum + s.grade (s => sum + 
-                return (s.subjects.length ? (total / (s.length * 100)) * 100 : total0).length >= ? 0 : false);
+            const passingStudents = students.filter(s => {
+                const total = s.subjects.reduce((sum, s) => sum + (s.grade || 0), 0);
+                return s.subjects.length ? (total / (s.subjects.length * 100)) * 100 >= 60 : false;
             }).length;
-            const failingStudents = totalStudents - totalStudentspassing;
+            const failingStudents = totalStudents - passingStudents;
 
             const subjects = [
-                { name: "مبادئ وأسس تمريض"},
-                { name: "اللغة العربية"},
-                { name: "اللغة الإنجليزية"},
-                { name: "الفيزياء"},
-                { name: "الكيمياء"},
-                { name: "التشريح / علم وظائف الأعضاء"},
-                { name: "التربية الدينية"},
-                { name: "الكمبيوتر"}
+                "مبادئ وأسس تمريض", "اللغة العربية", "اللغة الإنجليزية", "الفيزياء",
+                "الكيمياء", "التشريح / علم وظائف الأعضاء", "التربية الدينية", "الكمبيوتر"
             ];
             const highestGrades = subjects.map(subject => {
-                return {
-                    subject: subject.name,
-                    maxGrade: students.length ? Math.max(...students.map(s => {
-                        const subj = s.subjects.find(sub => s.id === sub.id);
-                        return subj ? (sub.grade || 0) : null0;
-                    })) : null0
-                };
+                const maxGrade = students.length ? Math.max(...students.map(s => {
+                    const subj = s.subjects.find(sub => sub.name === subject);
+                    return subj ? (subj.grade || 0) : 0;
+                })) : 0;
+                return { subject, maxGrade };
             });
 
             statsSection.innerHTML = `
                 <div class="stats-grid">
                     <div class="stat-item" id="total-students">
-                        <p><i class="fas fa-users"></i> عدد الطلاب: ${students.length}</p>
+                        <p><i class="fas fa-users"></i> عدد الطلاب: ${totalStudents}</p>
                     </div>
-                    <div class="stat-item" id="highest-percentage">
+                    <div class="stat-item" id="highest-grade">
                         <p><i class="fas fa-trophy"></i> أعلى نسبة مئوية: ${highestPercentage.toFixed(1)}%</p>
                     </div>
                     <div class="stat-item" id="average-grade">
-                        <p<i class="fas fa-chart-line"></i> متوسط الدرجات: ${avgGrade.toFixed(1)}</p>
+                        <p><i class="fas fa-chart-line"></i> متوسط الدرجات: ${avgGrade.toFixed(1)}</p>
                     </div>
                     <div class="stat-item" id="passing-students">
                         <p><i class="fas fa-check-circle"></i> عدد الناجحين: ${passingStudents}</p>
@@ -386,9 +375,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const existingStudent = students.find(s => s.id === studentId);
                 if (existingStudent) {
+                    // تحديث درجات الطالب الموجود
                     existingStudent.subjects = subjects;
                     updatedCount++;
                 } else {
+                    // إضافة طالب جديد
                     const username = generateUniqueUsername(fullName, studentId);
                     const originalPassword = generatePassword(fullName);
                     const hashedPassword = CryptoJS.SHA256(originalPassword).toString();
@@ -449,6 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const existingStudent = students.find(s => s.id === studentId);
         if (existingStudent) {
+            // تحديث درجات الطالب الموجود
             existingStudent.subjects = subjects;
             if (saveToLocalStorage('students', students)) {
                 renderResults();
@@ -457,6 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.reset();
             }
         } else {
+            // إضافة طالب جديد
             const username = generateUniqueUsername(fullName, studentId);
             const originalPassword = generatePassword(fullName);
             const hashedPassword = CryptoJS.SHA256(originalPassword).toString();
@@ -505,6 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('subject6').value = student.subjects[5]?.grade || 0;
             document.getElementById('subject7').value = student.subjects[6]?.grade || 0;
             document.getElementById('subject8').value = student.subjects[7]?.grade || 0;
+            // لا نحذف الطالب هنا، بل نترك النموذج لتحديث البيانات عبر الإرسال
         }
     };
 
@@ -519,18 +513,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // دالة تسجيل الخروج
-    window.logout = function() {
-        localStorage.removeItem('loggedInUser');
-        alert('تم تسجيل الخروج بنجاح!');
-        window.location.href = 'index.html';
-    };
-
     // استدعاء الدوال عند التحميل
-    renderWelcomeMessage();
     renderAdmins();
     renderResults();
     renderStats();
     renderNotifications();
     renderViolations();
+    renderWelcomeMessage();
 });
