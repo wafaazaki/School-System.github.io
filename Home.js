@@ -1,97 +1,31 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
-import { ref, get, child } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyBx2Xl3me5Obdiaksd22l6t6x6qVz5GX84",
-    authDomain: "nursinginstitute-6a36a.firebaseapp.com",
-    databaseURL: "https://nursinginstitute-6a36a-default-rtdb.firebaseio.com",
-    projectId: "nursinginstitute-6a36a",
-    storageBucket: "nursinginstitute-6a36a.firebasestorage.app",
-    messagingSenderId: "50087758858",
-    appId: "1:50087758858:web:fd1808eafd923a1a16a3f3",
-    measurementId: "G-VK83G9FX5J"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const database = getDatabase(app);
-
-async function getFromFirebase(key) {
-    try {
-        const snapshot = await get(child(ref(database), key));
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            console.log(`Data loaded from Firebase for key "${key}":`, data.length, 'items');
-            return Array.isArray(data) ? data : [];
-        } else {
-            console.log(`No data found in Firebase for key "${key}"`);
+document.addEventListener('DOMContentLoaded', function() {
+    // دالة لجلب البيانات من localStorage مع فحص السلامة
+    function getFromLocalStorage(key) {
+        try {
+            const data = localStorage.getItem(key);
+            if (data === null || data === 'undefined') {
+                console.log(`No data found in localStorage for key "${key}"`);
+                return [];
+            }
+            const parsed = JSON.parse(data);
+            if (!Array.isArray(parsed)) {
+                throw new Error(`Data for key "${key}" is not an array`);
+            }
+            console.log(`Data loaded from localStorage for key "${key}":`, parsed.length, 'items');
+            return parsed;
+        } catch (error) {
+            console.error(`Error loading from localStorage for key "${key}":`, error);
             return [];
         }
-    } catch (error) {
-        console.error(`Error loading from Firebase for key "${key}":`, error);
-        return [];
-    }
-}
-
-document.addEventListener('DOMContentLoaded', async function() {
-    function renderWelcomeMessage() {
-        const welcomeMessage = document.querySelector('.welcome-message');
-        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-        if (welcomeMessage && loggedInUser) {
-            welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
-        } else if (welcomeMessage) {
-            welcomeMessage.textContent = 'مرحبًا، ضيف!';
-        }
-    }
-
-    function showToast(message, type = 'success') {
-        let backgroundColor;
-        switch (type) {
-            case 'success':
-                backgroundColor = '#28a745';
-                break;
-            case 'error':
-                backgroundColor = '#dc3545';
-                break;
-            case 'info':
-                backgroundColor = '#17a2b8';
-                break;
-            default:
-                backgroundColor = '#333';
-        }
-        Toastify({
-            text: message,
-            duration: 3000,
-            gravity: 'top',
-            position: 'right',
-            backgroundColor: backgroundColor,
-            stopOnFocus: true,
-            style: {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                padding: '15px',
-                borderRadius: '5px',
-                direction: 'rtl',
-            }
-        }).showToast();
     }
 
     // جلب البيانات
-    let students = [];
-    let violations = [];
+    let students = getFromLocalStorage('students');
+    let violations = getFromLocalStorage('violations');
 
-    async function initializeData() {
-        students = await getFromFirebase('students');
-        violations = await getFromFirebase('violations');
-    }
-
-    async function renderNotifications() {
-        const notifications = await getFromFirebase('notifications');
+    // عرض الإشعارات
+    function renderNotifications() {
+        const notifications = getFromLocalStorage('notifications');
         const tableBody = document.getElementById('notifications-table-body');
         if (tableBody) {
             tableBody.innerHTML = '';
@@ -106,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // عرض النافبار بناءً على نوع المستخدم
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
     const navBar = document.getElementById('nav-bar');
     if (loggedInUser) {
@@ -124,34 +59,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         navBar.innerHTML = '<a href="index.html" title="الرئيسية"><i class="fas fa-home"></i></a>';
     }
 
+    // إخفاء لوحة التحكم
     const dashboard = document.getElementById('dashboard');
     if (dashboard) {
         dashboard.style.display = 'none';
     }
 
+    // التعامل مع نموذج البحث
     const searchForm = document.getElementById('search-form');
     const resultTableBody = document.getElementById('result-table-body');
     const violationsTableBody = document.getElementById('violations-table-body');
 
     if (searchForm && resultTableBody && violationsTableBody) {
+        // إذا الطالب مسجل، املأ حقل اسم الطالب تلقائيًا
         if (loggedInUser && loggedInUser.type === 'student') {
-            students = await getFromFirebase('students');
             const student = students.find(s => s.username === loggedInUser.username);
             if (student && document.getElementById('student-name')) {
                 document.getElementById('student-name').value = student.fullName;
-                document.getElementById('student-name').readOnly = true;
+                document.getElementById('student-name').readOnly = true; // منع التعديل
             }
         }
 
-        searchForm.addEventListener('submit', async function(e) {
+        searchForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
             const studentName = document.getElementById('student-name').value.trim().toLowerCase();
             const studentId = document.getElementById('student-id').value.trim().toLowerCase();
 
-            students = await getFromFirebase('students');
-            violations = await getFromFirebase('violations');
-
+            // إذا المستخدم طالب، تحقق من أن البحث يخصه فقط
             let student;
             if (loggedInUser && loggedInUser.type === 'student') {
                 student = students.find(s => 
@@ -160,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     s.id.toLowerCase() === studentId
                 );
             } else if (loggedInUser && loggedInUser.type === 'admin') {
+                // الأدمن يقدر يبحث عن أي طالب
                 student = students.find(s => 
                     s.fullName.toLowerCase() === studentName &&
                     s.id.toLowerCase() === studentId
@@ -170,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             violationsTableBody.innerHTML = '';
 
             if (student) {
-                showToast('تم العثور على النتيجة بنجاح!', 'success');
+                // عرض النتيجة
                 const total = student.subjects.reduce((sum, s) => sum + (s.grade || 0), 0);
                 const percentage = student.subjects.length ? (total / (student.subjects.length * 100)) * 100 : 0;
 
@@ -192,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 `;
                 resultTableBody.appendChild(row);
 
+                // عرض الإنذارات/المخالفات
                 const studentViolations = violations.filter(v => v.studentId.toLowerCase() === studentId);
                 if (studentViolations.length > 0) {
                     studentViolations.forEach(violation => {
@@ -211,7 +148,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                     violationsTableBody.appendChild(row);
                 }
             } else {
-                showToast('لم يتم العثور على نتيجة! تأكد من الاسم ورقم الجلوس.', 'error');
                 const row = document.createElement('tr');
                 row.innerHTML = `<td colspan="4">لم يتم العثور على نتيجة! تأكد من الاسم ورقم الجلوس.</td>`;
                 resultTableBody.appendChild(row);
@@ -223,10 +159,5 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // استدعاء الدوال
-    async function initializePage() {
-        await initializeData();
-        await renderNotifications();
-        renderWelcomeMessage();
-    }
-    await initializePage();
+    renderNotifications();
 });
