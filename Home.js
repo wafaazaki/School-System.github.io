@@ -1,10 +1,10 @@
-// Import Firebase SDKs
+// Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
 import { ref, get, child } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
-// Firebase configuration
+// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyBx2Xl3me5Obdiaksd22l6t6x6qVz5GX84",
     authDomain: "nursinginstitute-6a36a.firebaseapp.com",
@@ -21,7 +21,6 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const database = getDatabase(app);
 
-// Firebase function
 async function getFromFirebase(key) {
     try {
         const snapshot = await get(child(ref(database), key));
@@ -40,13 +39,14 @@ async function getFromFirebase(key) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // Initialize data
-    let students = [];
-    let violations = [];
-
-    async function initializeData() {
-        students = await getFromFirebase('students');
-        violations = await getFromFirebase('violations');
+    function renderWelcomeMessage() {
+        const welcomeMessage = document.querySelector('.welcome-message');
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (welcomeMessage && loggedInUser) {
+            welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
+        } else if (welcomeMessage) {
+            welcomeMessage.textContent = 'مرحبًا، ضيف!';
+        }
     }
 
     function showToast(message, type = 'success') {
@@ -81,14 +81,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         }).showToast();
     }
 
-    function renderWelcomeMessage() {
-        const welcomeMessage = document.querySelector('.welcome-message');
-        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-        if (welcomeMessage && loggedInUser) {
-            welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
-        } else if (welcomeMessage) {
-            welcomeMessage.textContent = 'مرحبًا، ضيف!';
-        }
+    // جلب البيانات
+    let students = [];
+    let violations = [];
+
+    async function initializeData() {
+        students = await getFromFirebase('students');
+        violations = await getFromFirebase('violations');
     }
 
     async function renderNotifications() {
@@ -223,11 +222,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // استدعاء الدوال
     async function initializePage() {
         await initializeData();
         await renderNotifications();
         renderWelcomeMessage();
     }
-
     await initializePage();
 });
