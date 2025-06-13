@@ -158,6 +158,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // أضيفي هنا: دالة renderWelcomeMessage و showToast
+    function renderWelcomeMessage() {
+        const welcomeMessage = document.querySelector('.welcome-message');
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        
+        if (welcomeMessage && loggedInUser) {
+            const userName = loggedInUser.fullName || loggedInUser.username;
+            let message;
+            if (loggedInUser.type === 'admin') {
+                message = `أهلًا بك يا بطل الإدارة، ${userName}! جاهز لقيادة العمليات؟ 🚀`;
+            } else if (loggedInUser.type === 'student') {
+                message = `مرحبًا بنجم الدراسة، ${userName}! استعد لتتألق في نتائجك! 🌟`;
+            } else {
+                message = `مرحبًا، ${userName}! نورتنا! 😊`;
+            }
+            welcomeMessage.textContent = message;
+            showToast(message, 'success');
+        } else if (welcomeMessage) {
+            welcomeMessage.textContent = 'مرحبًا، ضيف! سجّل دخولك لتبدأ المغامرة! 🎉';
+            showToast('يرجى تسجيل الدخول لتجربة كاملة!', 'info');
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        let backgroundColor, boxShadow;
+        switch (type) {
+            case 'success':
+                backgroundColor = 'linear-gradient(135deg, #28a745, #218838)';
+                boxShadow = '0 4px 15px rgba(40, 167, 69, 0.5)';
+                break;
+            case 'error':
+                backgroundColor = 'linear-gradient(135deg, #dc3545, #c82333)';
+                boxShadow = '0 4px 15px rgba(220, 53, 69, 0.5)';
+                break;
+            case 'info':
+                backgroundColor = 'linear-gradient(135deg, #17a2b8, #117a8b)';
+                boxShadow = '0 4px 15px rgba(23, 162, 184, 0.5)';
+                break;
+            default:
+                backgroundColor = '#333';
+                boxShadow = '0 4px 15px rgba(0, 0, 0, 0.5)';
+        }
+        Toastify({
+            text: message,
+            duration: 4000,
+            gravity: 'top',
+            position: 'right',
+            backgroundColor: backgroundColor,
+            stopOnFocus: true,
+            style: {
+                fontSize: '18px',
+                fontFamily: '"Tajawal", "Arial", sans-serif',
+                padding: '20px 30px',
+                borderRadius: '10px',
+                direction: 'rtl',
+                boxShadow: boxShadow,
+                color: '#fff',
+                maxWidth: '400px',
+                textAlign: 'right',
+            }
+        }).showToast();
+    }
+
     // استدعاء الدوال
     renderNotifications();
+    renderWelcomeMessage();
 });
