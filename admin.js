@@ -1,112 +1,47 @@
-// Import Firebase SDKs
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
-import { ref, set, get, child } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
-
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyBx2Xl3me5Obdiaksd22l6t6x6qVz5GX84",
-    authDomain: "nursinginstitute-6a36a.firebaseapp.com",
-    databaseURL: "https://nursinginstitute-6a36a-default-rtdb.firebaseio.com",
-    projectId: "nursinginstitute-6a36a",
-    storageBucket: "nursinginstitute-6a36a.firebasestorage.app",
-    messagingSenderId: "50087758858",
-    appId: "1:50087758858:web:fd1808eafd923a1a16a3f3",
-    measurementId: "G-VK83G9FX5J"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const database = getDatabase(app);
-
-// Firebase functions
-async function saveToFirebase(key, data) {
-    try {
-        await set(ref(database, key), data);
-        console.log(`Data saved to Firebase for key "${key}":`, data.length, 'items');
-        return true;
-    } catch (error) {
-        console.error(`Error saving to Firebase for key "${key}":`, error);
-        showToast('حدث خطأ أثناء حفظ البيانات! تحقق من وحدة التحكم.', 'error');
-        return false;
-    }
-}
-
-async function getFromFirebase(key) {
-    try {
-        const snapshot = await get(child(ref(database), key));
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            console.log(`Data loaded from Firebase for key "${key}":`, data.length, 'items');
-            return Array.isArray(data) ? data : [];
-        } else {
-            console.log(`No data found in Firebase for key "${key}"`);
+document.addEventListener('DOMContentLoaded', function() {
+    // دالة لجلب البيانات من localStorage مع فحص السلامة
+    function getFromLocalStorage(key) {
+        try {
+            const data = localStorage.getItem(key);
+            if (data === null || data === 'undefined') {
+                console.log(`No data found in localStorage for key "${key}"`);
+                return [];
+            }
+            const parsed = JSON.parse(data);
+            if (!Array.isArray(parsed)) {
+                throw new Error(`Data for key "${key}" is not an array`);
+            }
+            console.log(`Data loaded from localStorage for key "${key}":`, parsed.length, 'items');
+            return parsed;
+        } catch (error) {
+            console.error(`Error loading from localStorage for key "${key}":`, error);
             return [];
         }
-    } catch (error) {
-        console.error(`Error loading from Firebase for key "${key}":`, error);
-        return [];
-    }
-}
-
-document.addEventListener('DOMContentLoaded', async function() {
-    // Initialize data
-    let students = [];
-    let admins = [];
-    let notifications = [];
-    let violations = [];
-
-    async function initializeData() {
-        students = await getFromFirebase('students');
-        admins = await getFromFirebase('admins');
-        notifications = await getFromFirebase('notifications');
-        violations = await getFromFirebase('violations');
     }
 
-    function showToast(message, type = 'success') {
-        let backgroundColor;
-        switch (type) {
-            case 'success':
-                backgroundColor = '#28a745';
-                break;
-            case 'error':
-                backgroundColor = '#dc3545';
-                break;
-            case 'info':
-                backgroundColor = '#17a2b8';
-                break;
-            default:
-                backgroundColor = '#333';
-        }
-        Toastify({
-            text: message,
-            duration: 3000,
-            gravity: 'top',
-            position: 'right',
-            backgroundColor: backgroundColor,
-            stopOnFocus: true,
-            style: {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                padding: '15px',
-                borderRadius: '5px',
-                direction: 'rtl',
+    // دالة لتخزين البيانات في localStorage
+    function saveToLocalStorage(key, data) {
+        try {
+            if (!Array.isArray(data)) {
+                throw new Error(`Data for key "${key}" is not an array`);
             }
-        }).showToast();
-    }
-
-    function renderWelcomeMessage() {
-        const welcomeMessage = document.querySelector('.welcome-message');
-        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-        if (welcomeMessage && loggedInUser) {
-            welcomeMessage.textContent = `مرحبًا، ${loggedInUser.fullName || loggedInUser.username}!`;
-        } else if (welcomeMessage) {
-            welcomeMessage.textContent = 'مرحبًا، ضيف!';
+            localStorage.setItem(key, JSON.stringify(data));
+            console.log(`Data saved to localStorage for key "${key}":`, data.length, 'items');
+            return true;
+        } catch (error) {
+            console.error(`Error saving to localStorage for key "${key}":`, error);
+            alert('حدث خطأ أثناء حفظ البيانات! تحقق من وحدة التحكم.');
+            return false;
         }
     }
 
+    // جلب البيانات
+    let students = getFromLocalStorage('students');
+    let admins = getFromLocalStorage('admins');
+    let notifications = getFromLocalStorage('notifications');
+    let violations = getFromLocalStorage('violations');
+
+    // دالة لتوليد اسم مستخدم فريد
     function generateUniqueUsername(fullName, id) {
         let baseUsername = fullName.toLowerCase().replace(/\s+/g, '').slice(0, 10) + id.slice(-2);
         let username = baseUsername;
@@ -118,13 +53,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         return username;
     }
 
+    // دالة لتوليد كلمة مرور
     function generatePassword(fullName) {
         const firstName = fullName.split(' ')[0];
         return `${firstName.charAt(0).toUpperCase() + firstName.slice(1)}1234@`;
     }
 
-    async function renderAdmins() {
-        admins = await getFromFirebase('admins');
+    function renderAdmins() {
         const tableBody = document.getElementById('users-table-body');
         if (tableBody) {
             tableBody.innerHTML = '';
@@ -142,20 +77,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    document.getElementById('add-user-form')?.addEventListener('submit', async function(e) {
+    document.getElementById('add-user-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
         const fullName = document.getElementById('admin-name').value.trim();
         const username = document.getElementById('admin-username').value.trim();
         const password = document.getElementById('admin-password').value.trim();
 
         if (!fullName || !username || !password) {
-            showToast('يرجى إدخال الاسم الكامل، اسم المستخدم، وكلمة المرور!', 'error');
+            alert('يرجى إدخال الاسم الكامل، اسم المستخدم، وكلمة المرور!');
             return;
         }
-        admins = await getFromFirebase('admins');
-        students = await getFromFirebase('students');
         if (admins.some(admin => admin.username === username) || students.some(s => s.username === username)) {
-            showToast('اسم المستخدم موجود بالفعل! اختر اسم مستخدم آخر.', 'error');
+            alert('اسم المستخدم موجود بالفعل! اختر اسم مستخدم آخر.');
             return;
         }
 
@@ -165,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.log('New admin password hashed:', hashedPassword.length, 'characters');
         } catch (error) {
             console.error('Error hashing password:', error);
-            showToast('خطأ في تشفير كلمة المرور! تأكد من تحميل مكتبة CryptoJS.', 'error');
+            alert('خطأ في تشفير كلمة المرور! تأكد من تحميل مكتبة CryptoJS.');
             return;
         }
 
@@ -175,30 +108,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             fullName: fullName
         };
         admins.push(newAdmin);
-        if (await saveToFirebase('admins', admins)) {
+        if (saveToLocalStorage('admins', admins)) {
             renderAdmins();
-            showToast(`تم إضافة الأدمن بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${password}\nاحتفظ بهذه البيانات.`, 'success');
+            alert(`تم إضافة الأدمن بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${password}\nاحتفظ بهذه البيانات.`);
             this.reset();
         }
     });
 
-    window.deleteAdmin = async function(username) {
+    window.deleteAdmin = function(username) {
         if (confirm('هل أنت متأكد من حذف هذا الأدمن؟')) {
-            admins = await getFromFirebase('admins');
             if (admins.length === 1) {
-                showToast('لا يمكن حذف آخر أدمن! يجب أن يبقى أدمن واحد على الأقل.', 'error');
+                alert('لا يمكن حذف آخر أدمن! يجب أن يبقى أدمن واحد على الأقل.');
                 return;
             }
             admins = admins.filter(admin => admin.username !== username);
-            if (await saveToFirebase('admins', admins)) {
+            if (saveToLocalStorage('admins', admins)) {
                 renderAdmins();
-                showToast('تم حذف الأدمن بنجاح.', 'success');
+                alert('تم حذف الأدمن بنجاح.');
             }
         }
     };
 
-    async function renderResults(filter = '') {
-        students = await getFromFirebase('students');
+    function renderResults(filter = '') {
         const tableBody = document.getElementById('results-table-body');
         if (tableBody) {
             tableBody.innerHTML = '';
@@ -244,8 +175,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         renderResults(searchTerm);
     });
 
-    async function renderStats() {
-        students = await getFromFirebase('students');
+    function renderStats() {
         const statsSection = document.getElementById('stats-section');
         if (statsSection) {
             const totalStudents = students.length;
@@ -303,8 +233,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    async function renderNotifications() {
-        notifications = await getFromFirebase('notifications');
+    function renderNotifications() {
         const tableBody = document.getElementById('notifications-table-body');
         if (tableBody) {
             tableBody.innerHTML = '';
@@ -322,36 +251,32 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    window.addNotification = async function() {
+    window.addNotification = function() {
         const text = document.getElementById('notification-text')?.value.trim();
         if (!text) {
-            showToast('يرجى إدخال نص الإشعار!', 'error');
+            alert('يرجى إدخال نص الإشعار!');
             return;
         }
-        notifications = await getFromFirebase('notifications');
         const date = new Date().toLocaleString('ar-EG');
         notifications.push({ text, date });
-        if (await saveToFirebase('notifications', notifications)) {
+        if (saveToLocalStorage('notifications', notifications)) {
             renderNotifications();
-            showToast('تم إضافة الإشعار بنجاح!', 'success');
+            alert('تم إضافة الإشعار بنجاح!');
             document.getElementById('notification-text').value = '';
         }
     };
 
-    window.deleteNotification = async function(index) {
+    window.deleteNotification = function(index) {
         if (confirm('هل أنت متأكد من حذف هذا الإشعار؟')) {
-            notifications = await getFromFirebase('notifications');
             notifications.splice(index, 1);
-            if (await saveToFirebase('notifications', notifications)) {
+            if (saveToLocalStorage('notifications', notifications)) {
                 renderNotifications();
-                showToast('تم حذف الإشعار بنجاح.', 'success');
+                alert('تم حذف الإشعار بنجاح.');
             }
         }
     };
 
-    async function renderViolations() {
-        violations = await getFromFirebase('violations');
-        students = await getFromFirebase('students');
+    function renderViolations() {
         const tableBody = document.getElementById('violations-table-body');
         if (tableBody) {
             tableBody.innerHTML = '';
@@ -376,7 +301,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    document.getElementById('add-violation-form')?.addEventListener('submit', async function(e) {
+    document.getElementById('add-violation-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
         const studentId = document.getElementById('violation-student-id').value.trim();
         const type = document.getElementById('violation-type').value;
@@ -385,45 +310,41 @@ document.addEventListener('DOMContentLoaded', async function() {
         const parentSummons = document.getElementById('parent-summons').checked;
 
         if (!studentId || !reason || !penalty) {
-            showToast('يرجى إدخال جميع الحقول المطلوبة!', 'error');
+            alert('يرجى إدخال جميع الحقول المطلوبة!');
             return;
         }
 
-        students = await getFromFirebase('students');
         if (!students.some(s => s.id === studentId)) {
-            showToast('رقم الجلوس غير موجود! يرجى التأكد من رقم الجلوس.', 'error');
+            alert('رقم الجلوس غير موجود! يرجى التأكد من رقم الجلوس.');
             return;
         }
 
-        violations = await getFromFirebase('violations');
         const date = new Date().toLocaleString('ar-EG');
         const newViolation = { studentId, type, reason, penalty, parentSummons, date };
         violations.push(newViolation);
-        if (await saveToFirebase('violations', violations)) {
+        if (saveToLocalStorage('violations', violations)) {
             renderViolations();
-            showToast(`تم إضافة ${type === 'warning' ? 'إنذار' : 'مخالفة'} بنجاح!`, 'success');
+            alert(`تم إضافة ${type === 'warning' ? 'إنذار' : 'مخالفة'} بنجاح!`);
             this.reset();
         }
     });
 
-    window.deleteViolation = async function(index) {
+    window.deleteViolation = function(index) {
         if (confirm('هل أنت متأكد من حذف هذا الإنذار/المخالفة؟')) {
-            violations = await getFromFirebase('violations');
             violations.splice(index, 1);
-            if (await saveToFirebase('violations', violations)) {
+            if (saveToLocalStorage('violations', violations)) {
                 renderViolations();
-                showToast('تم حذف الإنذار/المخالفة بنجاح.', 'success');
+                alert('تم حذف الإنذار/المخالفة بنجاح.');
             }
         }
     };
 
-    window.processText = async function() {
+    window.processText = function() {
         const textInput = document.getElementById('text-input')?.value.trim();
         if (!textInput) {
-            showToast('يرجى إلصق النص أولاً!', 'error');
+            alert('يرجى إلصق النص أولاً!');
             return;
         }
-        students = await getFromFirebase('students');
         const lines = textInput.split('\n').filter(line => line.trim() !== '');
         let addedCount = 0;
         let updatedCount = 0;
@@ -445,9 +366,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
                 const existingStudent = students.find(s => s.id === studentId);
                 if (existingStudent) {
+                    // تحديث درجات الطالب الموجود
                     existingStudent.subjects = subjects;
                     updatedCount++;
                 } else {
+                    // إضافة طالب جديد
                     const username = generateUniqueUsername(fullName, studentId);
                     const originalPassword = generatePassword(fullName);
                     const hashedPassword = CryptoJS.SHA256(originalPassword).toString();
@@ -464,17 +387,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             }
         });
-        if (await saveToFirebase('students', students)) {
+        if (saveToLocalStorage('students', students)) {
             renderResults();
             renderStats();
-            showToast(`تم تحليل النص وإضافة ${addedCount} طالب جديد وتحديث ${updatedCount} طالب بنجاح! كلمة المرور للطلاب الجدد هي: [الاسم الأول بالحرف الكبير]1234@`, 'success');
+            alert(`تم تحليل النص وإضافة ${addedCount} طالب جديد وتحديث ${updatedCount} طالب بنجاح! كلمة المرور للطلاب الجدد هي: [الاسم الأول بالحرف الكبير]1234@`);
             document.getElementById('text-input').value = '';
         }
     };
 
-    document.getElementById('add-result-form')?.addEventListener('submit', async function(e) {
+    document.getElementById('add-result-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
-
+        
         const fullName = document.getElementById('student-name').value.trim();
         const studentId = document.getElementById('student-id').value.trim();
         const subject1 = parseInt(document.getElementById('subject1').value) || 0;
@@ -487,15 +410,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         const subject8 = parseInt(document.getElementById('subject8').value) || 0;
 
         if (!fullName || !studentId) {
-            showToast('يرجى إدخال اسم الطالب ورقم الجلوس!', 'error');
+            alert('يرجى إدخال اسم الطالب ورقم الجلوس!');
             return;
         }
         if ([subject1, subject2, subject3, subject4, subject5, subject6, subject7, subject8].some(g => g < 0 || g > 100)) {
-            showToast('تأكد أن جميع الدرجات بين 0 و100!', 'error');
+            alert('تأكد أن جميع الدرجات بين 0 و100!');
             return;
         }
 
-        students = await getFromFirebase('students');
         const subjects = [
             { name: "مبادئ وأسس تمريض", grade: subject1 },
             { name: "اللغة العربية", grade: subject2 },
@@ -509,14 +431,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const existingStudent = students.find(s => s.id === studentId);
         if (existingStudent) {
+            // تحديث درجات الطالب الموجود
             existingStudent.subjects = subjects;
-            if (await saveToFirebase('students', students)) {
+            if (saveToLocalStorage('students', students)) {
                 renderResults();
                 renderStats();
-                showToast(`تم تحديث درجات الطالب ${fullName} بنجاح!`, 'success');
+                alert(`تم تحديث درجات الطالب ${fullName} بنجاح!`);
                 this.reset();
             }
         } else {
+            // إضافة طالب جديد
             const username = generateUniqueUsername(fullName, studentId);
             const originalPassword = generatePassword(fullName);
             const hashedPassword = CryptoJS.SHA256(originalPassword).toString();
@@ -530,32 +454,29 @@ document.addEventListener('DOMContentLoaded', async function() {
                 originalPassword
             };
             students.push(student);
-            if (await saveToFirebase('students', students)) {
+            if (saveToLocalStorage('students', students)) {
                 renderResults();
                 renderStats();
-                showToast(`تم إضافة الطالب بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${originalPassword}`, 'success');
+                alert(`تم إضافة الطالب بنجاح!\nاسم المستخدم: ${username}\nكلمة المرور: ${originalPassword}`);
                 this.reset();
             }
         }
     });
 
-    window.deleteStudent = async function(studentId) {
+    window.deleteStudent = function(studentId) {
         if (confirm('هل أنت متأكد؟ لن تتمكن من استرجاع بيانات هذا الطالب!')) {
-            students = await getFromFirebase('students');
-            violations = await getFromFirebase('violations');
             students = students.filter(s => s.id !== studentId);
             violations = violations.filter(v => v.studentId !== studentId);
-            if (await saveToFirebase('students', students) && await saveToFirebase('violations', violations)) {
+            if (saveToLocalStorage('students', students) && saveToLocalStorage('violations', violations)) {
                 renderResults();
                 renderStats();
                 renderViolations();
-                showToast('تم حذف الطالب بنجاح.', 'success');
+                alert('تم حذف الطالب بنجاح.');
             }
         }
     };
 
-    window.editStudent = async function(studentId) {
-        students = await getFromFirebase('students');
+    window.editStudent = function(studentId) {
         const student = students.find(s => s.id === studentId);
         if (student) {
             document.getElementById('student-name').value = student.fullName;
@@ -568,6 +489,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             document.getElementById('subject6').value = student.subjects[5]?.grade || 0;
             document.getElementById('subject7').value = student.subjects[6]?.grade || 0;
             document.getElementById('subject8').value = student.subjects[7]?.grade || 0;
+            // لا نحذف الطالب هنا، بل نترك النموذج لتحديث البيانات عبر الإرسال
         }
     };
 
@@ -582,15 +504,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     };
 
-    async function initializePage() {
-        await initializeData();
-        await renderAdmins();
-        await renderResults();
-        await renderStats();
-        await renderNotifications();
-        await renderViolations();
-        renderWelcomeMessage();
-    }
-
-    await initializePage();
+    // استدعاء الدوال عند التحميل
+    renderAdmins();
+    renderResults();
+    renderStats();
+    renderNotifications();
+    renderViolations();
 });
