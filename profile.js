@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
     if (!loggedInUser) {
         alert('يرجى تسجيل الدخول أولاً!');
-        window.location.href = 'splash.html';
+        window.location.href = 'login.html';
         return;
     }
 
