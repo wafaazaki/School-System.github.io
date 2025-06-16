@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const navItems = [
             { href: 'index.html', icon: 'fas fa-home', title: 'الرئيسية' },
             { href: 'Home.html', icon: 'fas fa-chart-line', title: 'النتائج' },
-            { href: 'profile.html', icon: 'fas fa-user', title: 'الملف الشخصي' }
+            { href: 'profile.html', icon: 'fas fa-user', title: 'الملف الشخصي' },
+            { href: 'chatbot.html', icon: 'fas fa-robot', title: 'المساعد الذكي' }
         ];
         if (loggedInUser.type === 'admin') {
             navItems.push({ href: 'admin.html', icon: 'fas fa-cogs', title: 'لوحة التحكم' });
